@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.alexey.stockmarketrecommender.AlgorithmManager
 import com.alexey.stockmarketrecommender.R
 import com.alexey.stockmarketrecommender.databinding.FragmentMainBinding
 import com.alexey.stockmarketrecommender.json.StockData
@@ -26,22 +27,16 @@ import java.io.InputStream
 class MainFragment : Fragment() {
 
     private var _binding: FragmentMainBinding? = null
-    private lateinit var viewModel: MainFragmentViewModel
-
-
-    // This property is only valid between onCreateView and
-    // onDestroyView.
     private val binding get() = _binding!!
 
 
-
-    private lateinit var blogAdapter: TableRecyclerAdapter
-    private var stockData : StockData? = null
+    private lateinit var viewModel: MainFragmentViewModel
+    private lateinit var tableAdapter: TableRecyclerAdapter
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel = ViewModelProvider(this).get(MainFragmentViewModel::class.java)
+        viewModel = ViewModelProvider(this)[MainFragmentViewModel::class.java]
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -52,66 +47,66 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-//        val jsonFileString: String? = getJsonDataFromAssets("query_stock_data.json")
-//        Log.d("data : ", jsonFileString.toString())
-//        val listData = GsonBuilder().create().fromJson(jsonFileString, Array<TimeSeriesDaily>::class.java)
-
         updateInformationWindow()
 
+        setupViewModel()
         binding.headerButtonSearch.setOnClickListener { view ->
             val numberOfDays = binding.editTextNumberDays.text.toString().toInt()
-            Snackbar.make(view, getString(R.string.header_search_feedback), Snackbar.LENGTH_SHORT).show()
+            val stockName = binding.editTextStockName.text.toString()
+            if(stockName.isBlank()){
+                Snackbar.make(view, getString(R.string.header_search_isEmpty), Snackbar.LENGTH_SHORT).show()
+            } else {
+                Snackbar.make(view, getString(R.string.header_search_feedback), Snackbar.LENGTH_SHORT).show()
+                try {
 
-            try {
-                val jsonFileString: String? = getJsonDataFromAssets("query_stock_data.json")
-                Log.d("data : ", jsonFileString.toString())
-                val listData = GsonBuilder().create().fromJson(jsonFileString, Array<TimeSeriesDaily>::class.java)
-                val listData2 = ArrayList<TimeSeriesDaily>(2)
-                for (i in listData.indices) {
-                    if (i < numberOfDays)
-                        listData2.add(listData[i])
+                    val filteredData = extractDataFromJson(numberOfDays)
+                    viewModel.setupData(
+                        StockData(
+                            stockName = stockName,
+                            daysWindow = numberOfDays.toString(),
+                            timeSeriesDaily = filteredData
+                        )
+                    )
+
+
+                } catch (e: JSONException) {
+                    e.printStackTrace()
                 }
+            }
+        }
+    }
 
 
-                stockData = StockData(stockName = binding.editTextStockName.text.toString(), daysWindow = numberOfDays.toString(), timeSeriesDaily = listData2)
 
+    private fun setupViewModel() {
+        viewModel.apply {
 
-                updateInformationWindow()
+            stockData.observe(viewLifecycleOwner) {
 
-                binding.apply {
-                    formStockInfo.text = getString(R.string.form_stock_info, stockData?.stockName)
-                    formSocialMediaInfo.text = getString(R.string.form_social_media_info, countSocialMediaPosts().toString() )
-                    formStockTimeWindowInfo.text = getString(R.string.form_stock_time_window_info, stockData?.daysWindow)
-                }
                 initRecyclerView()
-            } catch (e: JSONException) {
-                e.printStackTrace()
+                updateInformationWindow()
+                binding.apply {
+                    formStockInfo.text = getString(R.string.form_stock_info, stockData.value?.stockName)
+                    formSocialMediaInfo.text = getString(R.string.form_social_media_info, countSocialMediaPosts().toString() )
+                    formStockTimeWindowInfo.text = getString(R.string.form_stock_time_window_info, stockData.value?.daysWindow)
+                }
+
             }
         }
     }
 
-
-    private fun countSocialMediaPosts(): Int {
-        var countSocialMediaPosts = 0
-        stockData?.timeSeriesDaily?.let {
-            for (item in it) {
-                countSocialMediaPosts = countSocialMediaPosts.plus(item.Social)
-            }
-        }
-        return countSocialMediaPosts
-    }
 
 
     private fun initRecyclerView(){
         val stockDataItems = ArrayList<TableItem>()
-        stockData?.timeSeriesDaily?.let {
+        viewModel.stockData.value?.timeSeriesDaily?.let {
             for (item in it) {
                 stockDataItems.add(
                     TableItem(
                         price = item.Close.toString(),
                         date = item.Date,
                         social = item.Social.toString(),
-                        recommendation = "buy"
+                        recommendation = getRecommendation(item)
                     )
                 )
             }
@@ -119,22 +114,31 @@ class MainFragment : Fragment() {
 
         binding.tableRecyclerview.apply {
             layoutManager = LinearLayoutManager(binding.root.context)
-            blogAdapter = TableRecyclerAdapter()
-            blogAdapter.submitItems(stockDataItems)
-            adapter = blogAdapter
+            tableAdapter = TableRecyclerAdapter()
+            tableAdapter.submitItems(stockDataItems)
+            adapter = tableAdapter
+        }
+    }
+
+    private fun getRecommendation(item: TimeSeriesDaily): String {
+
+        if (viewModel.stockData.value?.timeSeriesDaily != null ){
+            val algoManager = AlgorithmManager(item, viewModel.stockData.value?.timeSeriesDaily!!)
+            algoManager.selectAlgo(AlgorithmManager.Algorithm.SMART)
+            return algoManager.getRecommendation().name
+        } else  {
+            return "not enough data"
         }
     }
 
     private fun updateInformationWindow(){
         binding.apply {
-            if (stockData == null) {
-                formStockInfo.visibility = View.INVISIBLE
-                formSocialMediaInfo.visibility = View.INVISIBLE
-                formStockTimeWindowInfo.visibility = View.INVISIBLE
+            if (viewModel.stockData.value?.timeSeriesDaily?.size == null ) {
+                form.visibility = View.INVISIBLE
+                table.visibility = View.INVISIBLE
             } else {
-                formStockInfo.visibility = View.VISIBLE
-                formSocialMediaInfo.visibility = View.VISIBLE
-                formStockTimeWindowInfo.visibility = View.VISIBLE
+                form.visibility = View.VISIBLE
+                table.visibility = View.VISIBLE
             }
         }
     }
@@ -142,6 +146,19 @@ class MainFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+
+    private fun extractDataFromJson(numberOfDays : Int) : ArrayList<TimeSeriesDaily> {
+        val jsonFileString: String? = getJsonDataFromAssets("query_stock_data.json")
+        Log.d("data : ", jsonFileString.toString())
+        val listData = GsonBuilder().create().fromJson(jsonFileString, Array<TimeSeriesDaily>::class.java)
+        val filteredData = ArrayList<TimeSeriesDaily>()
+        for (i in listData.indices) {
+            if (i < numberOfDays)
+                filteredData.add(listData[i])
+        }
+        return filteredData
     }
 
     private fun getJsonDataFromAssets(jsonFileName : String): String? {
@@ -158,4 +175,5 @@ class MainFragment : Fragment() {
         }
         return json
     }
+
 }

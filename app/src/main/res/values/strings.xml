@@ -4,6 +4,8 @@
     <string name="main_fragment_label">Main Fragment</string>
     <string name="main_fragment_text">Main fragment</string>
 
+    <string name="header_search_isEmpty">Please enter stock symbol</string>
+
     <string name="header_info">Please enter stock symbol and a time window that is defaulted to 10 days (including today)</string>
     <string name="header_enter_stock_symbol">Enter stock symbol</string>
     <string name="header_enter_time_period">Enter time window in days(optional)</string>
