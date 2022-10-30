@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Stock Market Recommender</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="main_fragment_label">Main Fragment</string>
+    <string name="main_fragment_text">Main fragment</string>
+
+</resources>
