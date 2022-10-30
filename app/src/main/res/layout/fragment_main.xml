@@ -131,6 +131,11 @@
                 android:text="@string/table_info"
                 android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/table_recyclerview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
