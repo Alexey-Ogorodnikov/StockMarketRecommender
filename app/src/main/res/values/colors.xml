@@ -7,4 +7,8 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Custom color that will be used in the app-->
+    <color name="card_color_bg">#FFFFFFFF</color>
+    <color name="table_item_color_bg">#EEEEEEFF</color>
 </resources>

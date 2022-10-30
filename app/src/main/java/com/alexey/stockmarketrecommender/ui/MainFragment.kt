@@ -36,7 +36,7 @@ class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.textviewFirst.text = "The very beginning"
+
 
         val jsonFileString: String? = getJsonDataFromAssets("query_stock_data.json")
         Log.d("data : ", jsonFileString.toString())

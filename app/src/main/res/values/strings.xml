@@ -4,4 +4,19 @@
     <string name="main_fragment_label">Main Fragment</string>
     <string name="main_fragment_text">Main fragment</string>
 
+    <string name="header_info">Please enter stock symbol and a time window that is defaulted to 10 days (including today)</string>
+    <string name="header_enter_stock_symbol">Enter stock symbol</string>
+    <string name="header_enter_time_period">Enter time window in days(optional)</string>
+    <string name="header_button_search">Search for result</string>
+    <string name="header_search_feedback">Search started</string>
+    <string name="header_default_days">10</string>
+
+    <string name="form">form</string>
+    <string name="form_info">Information</string>
+    <string name="form_stock_info">Stock information : %s</string>
+    <string name="form_social_media_info">Social media count : %s</string>
+    <string name="form_stock_time_window_info">Time window : %s</string>
+
+    <string name="table">table</string>
+    <string name="table_info">Recommendations for when to buy, hold, or sell in this time window</string>
 </resources>
